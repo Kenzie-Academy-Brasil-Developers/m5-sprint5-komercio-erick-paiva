@@ -35,7 +35,9 @@ class CustomUserManager(BaseUserManager):
 
         return user
 
-    def create_user(self, email, password, first_name, last_name, is_seller = False, **extra_fields):
+    def create_user(
+        self, email, password, first_name, last_name, is_seller=False, **extra_fields
+    ):
         return self._create_user(
             email, password, first_name, last_name, is_seller, False, **extra_fields
         )
@@ -44,3 +46,11 @@ class CustomUserManager(BaseUserManager):
         return self._create_user(
             email, password, first_name, last_name, False, True, **extra_fields
         )
+
+
+class CustomMixin:
+    def get_serializer_class(self, *args, **kwargs):
+        return self.serializer_map.get(self.request.method, self.serializer_class)
+
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
