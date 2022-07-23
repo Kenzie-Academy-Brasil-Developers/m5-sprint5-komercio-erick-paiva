@@ -1,9 +1,15 @@
+from re import I
 from rest_framework.views import APIView, Request, Response, status
+
+from users.permissions import OwnerOfTheAccount
+from users.utils import CustomMixin
 from .models import User
-from .serializers import LoginSerializer, UserSerializer
+from .serializers import LoginSerializer, UserPatchSerializer, UserSerializer
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework import generics
+from rest_framework.authentication import TokenAuthentication
 
 
 class UserLoginView(APIView):
@@ -33,6 +39,19 @@ class UserView(generics.ListCreateAPIView):
         return self.queryset.order_by("-date_joined")[0:date_joined]
 
 
-class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+class UserDetailView(CustomMixin, RetrieveUpdateDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [OwnerOfTheAccount]
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_map = {
+        "PATCH": UserPatchSerializer,
+    }
+
+    def patch(self, request, *args, **kwargs):
+        if not request.user.is_superuser and request.data.get("is_active") == False:
+            return Response(
+                {"error": "You cannot change this property"},
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return self.partial_update(request, *args, **kwargs)
