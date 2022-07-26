@@ -32,6 +32,13 @@ class UserViewTest(APITestCase):
             "last_name": "Doe",
             "is_seller": False,
         }
+        cls.mock_seller_user = {
+            "email": "selleruser@mail.com",
+            "password": "1234",
+            "first_name": "Jhon",
+            "last_name": "Doe",
+            "is_seller": True,
+        }
         cls.invalid_mock_user = {
             "password": "1234",
             "first_name": "Jhon",
@@ -43,6 +50,14 @@ class UserViewTest(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertNotIn("password", response.json())
+        self.assertIn("email", response.json())
+
+    def test_create_seller_user(self) -> None:
+        response = self.client.post(self.url, self.mock_seller_user)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn("password", response.json())
+        self.assertIn("email", response.json())
 
     def test_create_user_fails(self) -> None:
         response = self.client.post(self.url, self.invalid_mock_user)
